@@ -109,6 +109,11 @@ public class MybatisPlusProperties {
      * TODO 枚举包扫描
      */
     private String typeEnumsPackage;
+    
+    /**
+     * 默认枚举字段
+     */
+    private String defaultEnumFiled;
 
     /**
      * TODO 全局配置

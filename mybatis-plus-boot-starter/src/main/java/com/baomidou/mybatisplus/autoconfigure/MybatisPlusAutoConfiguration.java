@@ -199,6 +199,9 @@ public class MybatisPlusAutoConfiguration implements InitializingBean {
         if (StringUtils.hasLength(this.properties.getTypeEnumsPackage())) {
             factory.setTypeEnumsPackage(this.properties.getTypeEnumsPackage());
         }
+        if (StringUtils.hasLength(this.properties.getDefaultEnumFiled())) {
+            factory.setDefaultEnumFiled(this.properties.getDefaultEnumFiled());
+        }
         // TODO 此处必为非 NULL
         GlobalConfig globalConfig = this.properties.getGlobalConfig();
         // TODO 注入填充器

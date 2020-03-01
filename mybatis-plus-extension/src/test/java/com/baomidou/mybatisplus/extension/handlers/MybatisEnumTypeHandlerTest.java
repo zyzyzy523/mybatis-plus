@@ -32,11 +32,17 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
+    
+    static {
+        MybatisEnumTypeHandler.DEFAULT_FILED = "value";
+    }
 
     private static final MybatisEnumTypeHandler<SexEnum> SEX_ENUM_ENUM_TYPE_HANDLER = new MybatisEnumTypeHandler<>(SexEnum.class);
 
     private static final MybatisEnumTypeHandler<GradeEnum> GRADE_ENUM_ENUM_TYPE_HANDLER = new MybatisEnumTypeHandler<>(GradeEnum.class);
-
+    
+    private static final MybatisEnumTypeHandler<Default> DEFAULT_ENUM_TYPE_HANDLER = new MybatisEnumTypeHandler<>(Default.class);
+    
     @Getter
     @AllArgsConstructor
     enum SexEnum implements IEnum<Integer> {
@@ -65,6 +71,17 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
 
         private final String desc;
     }
+    
+    @AllArgsConstructor
+    enum Default {
+        
+        PRIMARY(1, "小学"),
+        SECONDARY(2, "中学"),
+        HIGH(3, "高中");
+        
+        private final int value;
+        private final String desc;
+    }
 
     @Test
     void dealEnumType(){
@@ -74,6 +91,7 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
         Assertions.assertFalse(MybatisEnumTypeHandler.findEnumValueFieldName(String.class).isPresent());
         Assertions.assertTrue(MybatisEnumTypeHandler.findEnumValueFieldName(GradeEnum.class).isPresent());
         Assertions.assertFalse(MybatisEnumTypeHandler.findEnumValueFieldName(SexEnum.class).isPresent());
+        Assertions.assertFalse(MybatisEnumTypeHandler.findEnumValueFieldName(Default.class).isPresent());
     }
 
     @Test
@@ -92,6 +110,13 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
         verify(preparedStatement).setObject(5, 2);
         GRADE_ENUM_ENUM_TYPE_HANDLER.setParameter(preparedStatement, 6, null, JdbcType.INTEGER);
         verify(preparedStatement).setNull(6, JdbcType.INTEGER.TYPE_CODE);
+    
+        DEFAULT_ENUM_TYPE_HANDLER.setParameter(preparedStatement, 7, Default.PRIMARY, null);
+        verify(preparedStatement).setObject(7, 1);
+        DEFAULT_ENUM_TYPE_HANDLER.setParameter(preparedStatement, 8, Default.SECONDARY, null);
+        verify(preparedStatement).setObject(8, 2);
+        DEFAULT_ENUM_TYPE_HANDLER.setParameter(preparedStatement, 9, null, JdbcType.INTEGER);
+        verify(preparedStatement).setNull(9, JdbcType.INTEGER.TYPE_CODE);
     }
 
     @Test
@@ -103,13 +128,20 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
         assertEquals(SexEnum.MAN, SEX_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
         when(resultSet.getObject("column")).thenReturn(2);
         assertEquals(SexEnum.WO_MAN, SEX_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
+        
         when(resultSet.getObject("column")).thenReturn(null);
-
         assertNull(GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
         when(resultSet.getObject("column")).thenReturn(1);
         assertEquals(GradeEnum.PRIMARY, GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
         when(resultSet.getObject("column")).thenReturn(2);
         assertEquals(GradeEnum.SECONDARY, GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
+    
+        when(resultSet.getObject("column")).thenReturn(null);
+        assertNull(DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
+        when(resultSet.getObject("column")).thenReturn(1);
+        assertEquals(Default.PRIMARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
+        when(resultSet.getObject("column")).thenReturn(2);
+        assertEquals(Default.SECONDARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, "column"));
     }
 
     @Test
@@ -128,6 +160,13 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
         assertEquals(GradeEnum.SECONDARY, GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, 5));
         when(resultSet.getObject(6)).thenReturn(null);
         assertNull(GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(resultSet, 6));
+    
+        when(resultSet.getObject(4)).thenReturn(1);
+        assertEquals(Default.PRIMARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, 4));
+        when(resultSet.getObject(5)).thenReturn(2);
+        assertEquals(Default.SECONDARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, 5));
+        when(resultSet.getObject(6)).thenReturn(null);
+        assertNull(DEFAULT_ENUM_TYPE_HANDLER.getResult(resultSet, 6));
     }
 
     @Test
@@ -146,6 +185,13 @@ public class MybatisEnumTypeHandlerTest extends BaseTypeHandlerTest {
         assertEquals(GradeEnum.SECONDARY, GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(callableStatement, 5));
         when(callableStatement.getObject(6)).thenReturn(null);
         assertNull(GRADE_ENUM_ENUM_TYPE_HANDLER.getResult(callableStatement, 6));
+    
+        when(callableStatement.getObject(4)).thenReturn(1);
+        assertEquals(Default.PRIMARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(callableStatement, 4));
+        when(callableStatement.getObject(5)).thenReturn(2);
+        assertEquals(Default.SECONDARY, DEFAULT_ENUM_TYPE_HANDLER.getResult(callableStatement, 5));
+        when(callableStatement.getObject(6)).thenReturn(null);
+        assertNull(DEFAULT_ENUM_TYPE_HANDLER.getResult(callableStatement, 6));
     }
 
 }

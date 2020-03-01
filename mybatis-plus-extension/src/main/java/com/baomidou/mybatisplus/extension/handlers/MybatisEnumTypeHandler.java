@@ -18,6 +18,7 @@ package com.baomidou.mybatisplus.extension.handlers;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.baomidou.mybatisplus.core.enums.IEnum;
 import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import org.apache.ibatis.reflection.DefaultReflectorFactory;
 import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.reflection.ReflectorFactory;
@@ -52,6 +53,8 @@ public class MybatisEnumTypeHandler<E extends Enum<?>> extends BaseTypeHandler<E
     private final Class<E> type;
 
     private Invoker invoker;
+    
+    public static String DEFAULT_FILED;
 
     public MybatisEnumTypeHandler(Class<E> type) {
         if (type == null) {
@@ -59,9 +62,23 @@ public class MybatisEnumTypeHandler<E extends Enum<?>> extends BaseTypeHandler<E
         }
         this.type = type;
         MetaClass metaClass = MetaClass.forClass(type, reflectorFactory);
-        String name = "value";
-        if (!IEnum.class.isAssignableFrom(type)) {
-            name = findEnumValueFieldName(this.type).orElseThrow(() -> new IllegalArgumentException(String.format("Could not find @EnumValue in Class: %s.", this.type.getName())));
+        String name;
+        if (IEnum.class.isAssignableFrom(type)) {
+            name = "value";
+        } else {
+            Optional<String> enumValueFieldName = findEnumValueFieldName(this.type);
+            if (enumValueFieldName.isPresent()) {
+                name = enumValueFieldName.get();
+            } else {
+                if (StringUtils.isNotBlank(DEFAULT_FILED)) {
+                    name = metaClass.findProperty(DEFAULT_FILED);
+                    if (StringUtils.isBlank(name)) {
+                        throw new IllegalArgumentException(String.format("Could not find field %s in Class: %s.", DEFAULT_FILED, this.type.getName()));
+                    }
+                } else {
+                    throw new IllegalArgumentException(String.format("Could not find @EnumValue in Class: %s.", this.type.getName()));
+                }
+            }
         }
         this.invoker = metaClass.getGetInvoker(name);
     }
@@ -143,6 +160,30 @@ public class MybatisEnumTypeHandler<E extends Enum<?>> extends BaseTypeHandler<E
      */
     public static boolean isMpEnums(Class<?> clazz) {
         return clazz != null && clazz.isEnum() && (IEnum.class.isAssignableFrom(clazz) || findEnumValueFieldName(clazz).isPresent());
+    }
+    
+    /**
+     * 判断是否为MP枚举处理
+     *
+     * @param clazz        class
+     * @param defaultFiled 默认字段
+     * @return 是否为MP枚举处理
+     */
+    public static boolean isMpEnums(Class<?> clazz,String defaultFiled) {
+        boolean isMpEnums = isMpEnums(clazz);
+        if (!isMpEnums) {
+            //支持默认约定字段
+            Field field = null;
+            if (StringUtils.isNotBlank(defaultFiled)) {
+                try {
+                    field = clazz.getDeclaredField(defaultFiled);
+                } catch (NoSuchFieldException e) {
+                    //ignore
+                }
+            }
+            isMpEnums = field != null;
+        }
+        return isMpEnums;
     }
 
     private E valueOf(Class<E> enumClass, Object value) {

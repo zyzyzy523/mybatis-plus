@@ -20,11 +20,11 @@ import com.baomidou.mybatisplus.core.MybatisPlusVersion;
 import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.baomidou.mybatisplus.core.MybatisXMLConfigBuilder;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
-import com.baomidou.mybatisplus.core.enums.IEnum;
 import com.baomidou.mybatisplus.core.exceptions.MybatisPlusException;
 import com.baomidou.mybatisplus.core.toolkit.Assert;
 import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.handlers.MybatisEnumTypeHandler;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import lombok.Setter;
@@ -147,6 +147,12 @@ public class MybatisSqlSessionFactoryBean implements FactoryBean<SqlSessionFacto
     // TODO 自定义全局配置
     @Setter
     private GlobalConfig globalConfig;
+    
+    /**
+     * 默认枚举字段属性
+     */
+    @Setter
+    private String defaultEnumFiled;
 
     /**
      * Sets the ObjectFactory.
@@ -501,9 +507,12 @@ public class MybatisSqlSessionFactoryBean implements FactoryBean<SqlSessionFacto
             }
             // 取得类型转换注册器
             TypeHandlerRegistry typeHandlerRegistry = targetConfiguration.getTypeHandlerRegistry();
+            if (StringUtils.isNotBlank(defaultEnumFiled)) {
+                MybatisEnumTypeHandler.DEFAULT_FILED = defaultEnumFiled;
+            }
             classes.stream()
                 .filter(Class::isEnum)
-                .filter(MybatisEnumTypeHandler::isMpEnums)
+                .filter(cls -> MybatisEnumTypeHandler.isMpEnums(cls, defaultEnumFiled))
                 .forEach(cls -> typeHandlerRegistry.register(cls, MybatisEnumTypeHandler.class));
         }
 
